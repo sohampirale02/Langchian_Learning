@@ -29,11 +29,11 @@ def substract(num1:int,num2:int):
 
 tools =[add,substract]
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
-    temperature=0.7,
-    api_key=GEMINI_API_KEY 
-).bind_tools(tools=tools)
+  llm = ChatGoogleGenerativeAI(
+      model="gemini-2.0-flash",
+      temperature=0.7,
+      api_key=GEMINI_API_KEY 
+  ).bind_tools(tools=tools)
 
 def ai_node(state:AgentState)->AgentState:
   system_prompt=SystemMessage(content="You are a friendly helpful humorous assistant")
@@ -74,7 +74,6 @@ app = graph.compile()
 
 # initial_state=AgentState(messages=[HumanMessage(content='i.What is 2 +5 and ii.what is 7+7 and iii.then what is subtration of both the results?')])
 initial_state=AgentState(messages=[HumanMessage(content='i.What is 2.3 + 4.5?')])
-
 
 result = app.invoke(initial_state)
 print(f"final_result : {result}")
