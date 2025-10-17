@@ -18,8 +18,7 @@ class AgentState(TypedDict):
 def agent_node(state:AgentState)->AgentState:
     """Agent node which talks back and forth with HR and helps HR talk with the Resume"""
     print('inside agent_node')
-    # print(f"state['messages'] : {state['messages']}")
-    system_prompt = SystemMessage(content="You are AI assistant of HR manager who helps the HR talk with a resume, and uses read_pdf tool to retrive data from resume ask fr path of the resuem to the HR,after whole process is done and if HR is satisfied and wants to stop just return the string 'end' ONLY")
+    system_prompt = SystemMessage(content="")
     response = llm.invoke([system_prompt]+state['messages'])
     state['messages']=[response]
     print('AI : ',response.content)
@@ -40,24 +39,6 @@ def decider(state:AgentState):
   else:
    return "hr_edge" 
 
-def hr_node(state:AgentState)->AgentState:
-   user_query = input("Enter something : ")
-   state['messages']=[HumanMessage(content=user_query)]
-   return state
-
-def read_pdf(file_path):
-    """Read text from a PDF file. Needs one filed called file_path to read pdf from"""
-    try:
-        with open(file_path, 'rb') as file:
-            pdf_reader = PyPDF2.PdfReader(file)
-            text = ""
-            for page in pdf_reader.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text += page_text + "\n"
-            return text
-    except Exception as e:
-        return f"Error reading PDF: {str(e)}"
 
 llm  = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash",
