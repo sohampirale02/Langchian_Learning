@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Simple AI Chat</title>
+    <style>
+      :root{--bg:#0f1724;--card:#0b1220;--accent:#4f46e5;--muted:#94a3b8;--text:#e6eef8}
+      *{box-sizing:border-box}
+      html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
+      body{background:linear-gradient(180deg,#071029 0%, #07121b 100%);color:var(--text);display:flex;align-items:center;justify-content:center;padding:24px}
+      .wrapper{width:100%;max-width:720px;background:var(--card);border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+      header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+      header h1{font-size:18px;margin:0}
+      .chat{height:64vh;min-height:360px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:14px;border-radius:8px;overflow:auto;border:1px solid rgba(255,255,255,0.03)}
+      .msg{display:block;max-width:78%;padding:10px 12px;border-radius:10px;margin:8px 0;line-height:1.4}
+      .user{margin-left:auto;background:linear-gradient(90deg,var(--accent),#7c3aed);color:white;text-align:right}
+      .ai{background:rgba(255,255,255,0.04);color:var(--text);border:1px solid rgba(255,255,255,0.02)}
+      .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+      form{display:flex;gap:8px;margin-top:12px}
+      input[type="text"]{flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)}
+      button{padding:10px 14px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),#7c3aed);color:white;cursor:pointer}
+      button[disabled]{opacity:0.6;cursor:default}
+      .small{font-size:13px;color:var(--muted);margin-left:6px}
+      .error{color:#ffb4b4;background:rgba(255,80,80,0.06);padding:8px;border-radius:8px;margin-top:8px}
+    </style>
+  </head>
+  <body>
+    <div class="wrapper" role="application" aria-label="AI chat">
+      <header>
+        <h1>Plant Disease Detection Expert</h1>
+      </header>
+
+      <div id="chat" class="chat" aria-live="polite"></div>
+
+      <form id="form">
+        <input id="input" type="text" placeholder="Type a message and press Enter or Send" autocomplete="off" required />
+        <button id="send">Send</button>
+      </form>
+
+      <div id="error" class="error" style="display:none"></div>
+    </div>
+
+    <script>
+      const chatEl = document.getElementById('chat')
+      const form = document.getElementById('form')
+      const input = document.getElementById('input')
+      const sendBtn = document.getElementById('send')
+      const errEl = document.getElementById('error')
+
+      const messages = []
+
+      function appendMessage(text, who){
+        const wrapper = document.createElement('div')
+        wrapper.className = 'msg ' + (who === 'user' ? 'user' : 'ai')
+        wrapper.innerText = text
+        chatEl.appendChild(wrapper)
+        chatEl.scrollTop = chatEl.scrollHeight
+      }
+
+      function setError(msg){
+        if(!msg){ errEl.style.display='none'; errEl.textContent=''; return }
+        errEl.style.display='block'; errEl.textContent = msg
+      }
+
+      async function sendMessage(userMessage){
+        appendMessage(userMessage, 'user')
+        messages.push({ role: 'Human', content: userMessage })
+
+        try{
+          sendBtn.disabled = true
+          setError('')
+
+          const res = await fetch('http://localhost:3000/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages })
+          })
+
+          if(!res.ok){
+            const text = await res.text().catch(()=>res.statusText)
+            throw new Error('Server returned ' + res.status + ': ' + text)
+          }
+
+          const data = await res.json()
+          const reply = data.reply ?? data.message ?? data.text ?? JSON.stringify(data)
+
+          appendMessage(reply, 'ai')
+          messages.push({ role: 'AI', content: reply })
+
+        }catch(err){
+          console.error(err)
+          setError('Request failed: ' + err.message)
+        }finally{
+          sendBtn.disabled = false
+        }
+      }
+
+      form.addEventListener('submit', (e)=>{
+        e.preventDefault()
+        const val = input.value.trim()
+        if(!val) return
+        input.value = ''
+        input.focus()
+        sendMessage(val)
+      })
+
+      input.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') input.value = ''
+      })
+
+      appendMessage('Hello! Type something to begin chatting.', 'ai')
+    </script>
+  </body>
+</html>
